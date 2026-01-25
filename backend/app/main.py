@@ -5,6 +5,7 @@ Main FastAPI application entry point
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -13,14 +14,17 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Configure CORS (will need to update origins for production)
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React dev server
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include API routes
+app.include_router(router)
 
 
 @app.get("/")
@@ -33,21 +37,6 @@ async def root():
     }
 
 
-@app.get("/api/status")
-async def api_status():
-    """API status endpoint"""
-    return {
-        "api": "operational",
-        "simulation": "not yet implemented",
-        "websocket": "not yet implemented",
-    }
-
-
-# TODO: Add simulation endpoints
-# TODO: Add WebSocket endpoint for real-time updates
-# TODO: Add control endpoints (wind, solar, demand, etc.)
-
-
 if __name__ == "__main__":
     import uvicorn
     
@@ -55,5 +44,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,  # Auto-reload on code changes (development only)
+        reload=True,
     )
