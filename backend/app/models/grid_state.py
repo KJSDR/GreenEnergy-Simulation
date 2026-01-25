@@ -137,4 +137,44 @@ class WindTurbineState(EnergySource):
 class SolarArrayState(EnergySource):
     """State of solar panel array"""
     source_type: EnergySourceType = EnergySourceType.SOLAR
-    array_area_m2: float
+    array_area_m2: float = Field(
+        default=100000.0,
+        gt=0.0,
+        description="Total solar panel area in square meters"
+    )
+    efficiency: float = Field(
+        default=0.20,
+        ge=0.0,
+        le=1.0,
+        description="Solar panel efficiency (0.0-1.0)"
+    )
+
+class BatteryState(EnergySource):
+    """State of battery storage system"""
+    source_type: EnergySourceType = EnergySourceType.BATTERY
+    max_capacity_mwh: float = Field(
+        ...,
+        gt=0.0,
+        description="Max energy storage capacity in megawatt-hours"
+    )
+    current_charge_mwh: float = Field(
+        default=0.0,
+        ge=0.0,
+        description="Current stored energy in megawatt-hours"
+    )
+    max_charge_rate_mw: float = Field(
+        default=100.0,
+        ge=0.0,
+        description="Max charging rate in megawatts"
+    )
+    max_discharge_rate_mw: float = Field(
+        default=100.0,
+        ge=0.0,
+        description="Max discharging rate in megawatts"
+    )
+    round_trip_efficiency: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="Battery round-trip efficiency (0.95 = 95%)"
+    )
