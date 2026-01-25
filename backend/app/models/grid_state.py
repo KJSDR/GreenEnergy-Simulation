@@ -109,7 +109,6 @@ class EnergySource(BaseModel):
     )
     current_output_mw: float = Field(
         default=0.0,
-        ge=0.0,
         description="Current power output in megawatts"
     )
     
