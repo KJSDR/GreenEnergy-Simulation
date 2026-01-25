@@ -3,9 +3,10 @@ Renewable Grid Simulator - Backend API
 Main FastAPI application entry point
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
+from app.api.websocket import websocket_endpoint
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -35,6 +36,10 @@ async def root():
         "message": "Renewable Grid Simulator API",
         "version": "0.1.0",
     }
+
+@app.websocket("/ws")
+async def websocket_route(websocket: WebSocket):
+    await websocket_endpoint(websocket)
 
 
 if __name__ == "__main__":
