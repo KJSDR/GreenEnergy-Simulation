@@ -2,6 +2,9 @@
 
 ## Project Overview
 
+source venv/bin/activate
+uvicorn app.main:app --reload
+
 **Goal:** Build a professional renewable energy grid simulation platform to demonstrate systems engineering skills for Danish green energy companies (Ørsted, Vestas, etc.)
 
 **Timeline:** 6 months (steady pace, ~10 hours/week)
