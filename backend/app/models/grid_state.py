@@ -134,3 +134,7 @@ class WindTurbineState(EnergySource):
             data['capacity_mw'] = data.get('num_turbines', 50) * data.get('turbine_capacity_mw', 9.0)
         super().__init__(**data)
 
+class SolarArrayState(EnergySource):
+    """State of solar panel array"""
+    source_type: EnergySourceType = EnergySourceType.SOLAR
+    array_area_m2: float

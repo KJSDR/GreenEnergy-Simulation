@@ -65,12 +65,12 @@ grid-simulator/
 
 **Tasks:**
 - [x] Create project structure
-- [ ] Initialize Git repository
-- [ ] Set up Python virtual environment
+- [x] Initialize Git repository
+- [x] Set up Python virtual environment
 - [ ] Initialize FastAPI backend skeleton
 - [ ] Initialize React frontend skeleton
 - [ ] Configure .gitignore
-- [ ] First commit to GitHub
+- [x] First commit to GitHub
 - [ ] Create development branch strategy
 
 **Files to Create:**
