@@ -1,5 +1,6 @@
 import React from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
+import { ChartsPanel } from './components/Dashboard/ChartsPanel';
 
 function App() {
   const { gridState, isConnected } = useWebSocket();
@@ -87,6 +88,12 @@ function App() {
           </div>
 
         </div>
+
+        {/* Charts Section */}
+        <div className="mt-6">
+          <ChartsPanel gridState={gridState} />
+        </div>
+
       </main>
     </div>
   );
