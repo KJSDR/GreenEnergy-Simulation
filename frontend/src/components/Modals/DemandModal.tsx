@@ -1,142 +1,87 @@
 /**
- * Solar/Weather Control Modal
+ * Demand Control Modal
  * 
- * Controls cloud cover and temperature (affects solar output)
+ * Toggle industrial load on/off
  */
 
 import React, { useState } from 'react';
 import { Modal } from './Modal';
 
-interface SolarModalProps {
+interface DemandModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentCloudCover: number;
-  currentTemperature: number;
-  onCloudChange: (cover: number) => void;
-  onTemperatureChange: (temp: number) => void;
+  industrialEnabled: boolean;
+  onIndustrialToggle: (enabled: boolean) => void;
 }
 
-export const SolarModal: React.FC<SolarModalProps> = ({ 
+export const DemandModal: React.FC<DemandModalProps> = ({ 
   isOpen, 
   onClose, 
-  currentCloudCover,
-  currentTemperature,
-  onCloudChange,
-  onTemperatureChange
+  industrialEnabled,
+  onIndustrialToggle
 }) => {
-  const [cloudCover, setCloudCover] = useState(currentCloudCover);
-  const [temperature, setTemperature] = useState(currentTemperature);
+  const [industrial, setIndustrial] = useState(industrialEnabled);
 
   const handleApply = () => {
-    onCloudChange(cloudCover);
-    onTemperatureChange(temperature);
+    onIndustrialToggle(industrial);
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="☀️ Solar & Weather Control">
+    <Modal isOpen={isOpen} onClose={onClose} title="🏙️ City Demand Control">
       <div className="space-y-4">
         
         {/* Current Status */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-gray-700 rounded p-4">
-            <p className="text-sm text-gray-400">Cloud Cover</p>
-            <p className="text-2xl font-bold">{(currentCloudCover * 100).toFixed(0)}%</p>
-          </div>
-          <div className="bg-gray-700 rounded p-4">
-            <p className="text-sm text-gray-400">Temperature</p>
-            <p className="text-2xl font-bold">{currentTemperature.toFixed(1)}°C</p>
-          </div>
+        <div className="bg-gray-700 rounded p-4">
+          <p className="text-sm text-gray-400">Industrial Load</p>
+          <p className="text-2xl font-bold">{industrialEnabled ? 'ACTIVE' : 'INACTIVE'}</p>
+          <p className="text-sm text-gray-400 mt-1">+50 MW when active</p>
         </div>
 
-        {/* Cloud Cover Slider */}
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Cloud Cover
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.01"
-            value={cloudCover}
-            onChange={(e) => setCloudCover(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-sm text-gray-400 mt-1">
-            <span>Clear</span>
-            <span className="font-bold text-white">{(cloudCover * 100).toFixed(0)}%</span>
-            <span>Overcast</span>
-          </div>
-        </div>
-
-        {/* Temperature Slider */}
-        <div>
-          <label className="block text-sm font-medium mb-2">
-            Temperature
-          </label>
-          <input
-            type="range"
-            min="-10"
-            max="35"
-            step="0.1"
-            value={temperature}
-            onChange={(e) => setTemperature(parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-sm text-gray-400 mt-1">
-            <span>-10°C</span>
-            <span className="font-bold text-white">{temperature.toFixed(1)}°C</span>
-            <span>35°C</span>
+        {/* Industrial Toggle */}
+        <div className="bg-gray-700 rounded p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Industrial Facilities</p>
+              <p className="text-sm text-gray-400">Heavy manufacturing, data centers</p>
+            </div>
+            <button
+              onClick={() => setIndustrial(!industrial)}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                industrial ? 'bg-green-600' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                  industrial ? 'translate-x-7' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
         </div>
 
         {/* Info */}
         <div className="text-sm text-gray-400 space-y-1">
-          <p>• Clouds reduce solar output by up to 80%</p>
-          <p>• Cold temps (&lt;10°C) increase heating demand</p>
-          <p>• Hot temps (&gt;20°C) increase cooling demand</p>
+          <p>• Base residential load: ~300 MW</p>
+          <p>• Industrial adds: +50 MW constant</p>
+          <p>• Peak demand occurs at 8am and 6pm</p>
+          <p>• Heating/cooling varies with temperature</p>
         </div>
 
-        {/* Quick Presets */}
-        <div>
-          <p className="text-sm font-medium mb-2">Quick Presets:</p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => {
-                setCloudCover(0);
-                setTemperature(25);
-              }}
-              className="bg-gray-700 hover:bg-gray-600 rounded p-2 text-sm"
-            >
-              ☀️ Sunny
-            </button>
-            <button
-              onClick={() => {
-                setCloudCover(0.5);
-                setTemperature(15);
-              }}
-              className="bg-gray-700 hover:bg-gray-600 rounded p-2 text-sm"
-            >
-              ⛅ Partly Cloudy
-            </button>
-            <button
-              onClick={() => {
-                setCloudCover(0.9);
-                setTemperature(8);
-              }}
-              className="bg-gray-700 hover:bg-gray-600 rounded p-2 text-sm"
-            >
-              ☁️ Overcast
-            </button>
+        {/* Impact Warning */}
+        {industrial !== industrialEnabled && (
+          <div className={`rounded p-3 ${industrial ? 'bg-yellow-900/50' : 'bg-blue-900/50'}`}>
+            <p className="text-sm font-medium">
+              {industrial ? '⚠️ Increasing demand by 50 MW' : '✅ Reducing demand by 50 MW'}
+            </p>
           </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2 pt-4">
           <button
             onClick={handleApply}
-            className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded"
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded"
           >
             Apply
           </button>

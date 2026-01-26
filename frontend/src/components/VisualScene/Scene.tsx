@@ -1,23 +1,23 @@
 /**
  * Visual Scene
  * 
- * Animated SVG scene showing:
- * - Wind turbines (spinning based on wind speed)
- * - Solar panels (glowing based on output)
- * - City (lights based on demand)
- * - Battery indicator
- * - Gas plant
- * - Sky (changes with time of day)
+ * Animated SVG scene with clickable controls for:
+ * - Wind turbines
+ * - Solar panels/weather
+ * - City/demand
  */
 
 import React, { useState } from 'react';
 import { WindModal } from '../Modals/WindModal';
+import { SolarModal } from '../Modals/SolarModal';
+import { DemandModal } from '../Modals/DemandModal';
 
 interface GridState {
   weather: { 
     wind_speed: number; 
     cloud_cover: number; 
     time_of_day: number;
+    temperature: number;
   };
   wind: { current_output_mw: number; capacity_mw: number };
   solar: { current_output_mw: number; capacity_mw: number };
@@ -27,7 +27,10 @@ interface GridState {
     current_output_mw: number;
   };
   gas: { current_output_mw: number };
-  demand: { total_demand: number };
+  demand: { 
+    total_demand: number;
+    industrial_load: number;
+  };
 }
 
 interface SceneProps {
@@ -36,12 +39,14 @@ interface SceneProps {
 
 export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   const [showWindModal, setShowWindModal] = useState(false);
+  const [showSolarModal, setShowSolarModal] = useState(false);
+  const [showDemandModal, setShowDemandModal] = useState(false);
 
   // Calculate animation speeds and intensities
   const windSpeed = gridState.weather.wind_speed;
   const isNight = gridState.weather.time_of_day < 6 || gridState.weather.time_of_day >= 18;
   
-  // Turbine rotation speed (0 = stopped, 1 = slow, 3 = fast)
+  // Turbine rotation speed
   const turbineSpeed = windSpeed < 3 ? 0 : windSpeed > 25 ? 0 : windSpeed / 5;
   
   // Solar glow intensity
@@ -56,17 +61,42 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   // Sky color based on time
   const getSkyColor = () => {
     const hour = gridState.weather.time_of_day;
-    if (hour < 6 || hour >= 20) return '#1a1a2e'; // Night
-    if (hour < 8) return '#ff6b6b'; // Dawn
-    if (hour < 18) return '#4ecdc4'; // Day
-    return '#ff6b6b'; // Dusk
+    if (hour < 6 || hour >= 20) return '#1a1a2e';
+    if (hour < 8) return '#ff6b6b';
+    if (hour < 18) return '#4ecdc4';
+    return '#ff6b6b';
   };
 
+  // API calls
   const handleWindChange = (speed: number) => {
     fetch('http://localhost:8000/api/control/wind', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wind_speed: speed })
+    });
+  };
+
+  const handleCloudChange = (cover: number) => {
+    fetch('http://localhost:8000/api/control/clouds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cloud_cover: cover })
+    });
+  };
+
+  const handleTemperatureChange = (temp: number) => {
+    fetch('http://localhost:8000/api/control/temperature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ temperature: temp })
+    });
+  };
+
+  const handleIndustrialToggle = (enabled: boolean) => {
+    fetch('http://localhost:8000/api/control/industrial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled })
     });
   };
 
@@ -95,23 +125,28 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           className="transition-all duration-1000"
         />
         
-        {/* Clouds */}
-        <ellipse 
-          cx={200 + (gridState.weather.time_of_day * 10)} 
-          cy={150} 
-          rx={80} 
-          ry={30}
-          fill="rgba(255,255,255,0.3)"
-          opacity={gridState.weather.cloud_cover}
-        />
-        <ellipse 
-          cx={600 + (gridState.weather.time_of_day * 5)} 
-          cy={120} 
-          rx={100} 
-          ry={35}
-          fill="rgba(255,255,255,0.3)"
-          opacity={gridState.weather.cloud_cover}
-        />
+        {/* Clouds - CLICKABLE */}
+        <g 
+          onClick={() => setShowSolarModal(true)}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <ellipse 
+            cx={200 + (gridState.weather.time_of_day * 10)} 
+            cy={150} 
+            rx={80} 
+            ry={30}
+            fill="rgba(255,255,255,0.3)"
+            opacity={gridState.weather.cloud_cover}
+          />
+          <ellipse 
+            cx={600 + (gridState.weather.time_of_day * 5)} 
+            cy={120} 
+            rx={100} 
+            ry={35}
+            fill="rgba(255,255,255,0.3)"
+            opacity={gridState.weather.cloud_cover}
+          />
+        </g>
         
         {/* Ground */}
         <rect 
@@ -121,7 +156,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           fill="#2d5016"
         />
         
-        {/* Wind Turbines - PROPERLY ROTATING */}
+        {/* Wind Turbines - CLICKABLE */}
         {[200, 350, 500].map((x, i) => (
           <g 
             key={i} 
@@ -138,7 +173,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
               strokeWidth="8"
             />
             
-            {/* Blades - nested transform for proper rotation */}
+            {/* Blades */}
             <g transform={`translate(${x}, 400)`}>
               <g 
                 className={turbineSpeed > 0 ? 'turbine-spin' : ''}
@@ -164,8 +199,12 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           </g>
         ))}
         
-        {/* Solar Array */}
-        <g transform="translate(650, 500)">
+        {/* Solar Array - CLICKABLE */}
+        <g 
+          transform="translate(650, 500)"
+          onClick={() => setShowSolarModal(true)}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <rect 
             width="150" 
             height="80" 
@@ -186,8 +225,12 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           <line x1="0" y1="40" x2="150" y2="40" stroke="#0f172a" strokeWidth="2" />
         </g>
         
-        {/* City */}
-        <g transform="translate(50, 480)">
+        {/* City - CLICKABLE */}
+        <g 
+          transform="translate(50, 480)"
+          onClick={() => setShowDemandModal(true)}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
           {[0, 40, 80].map((x, i) => (
             <rect 
               key={i}
@@ -296,15 +339,31 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
       <div className="absolute bottom-4 left-4 bg-gray-800 bg-opacity-90 p-4 rounded-lg border border-gray-700">
         <p className="text-sm text-gray-300">💨 Wind: {windSpeed.toFixed(1)} m/s</p>
         <p className="text-sm text-gray-300">⏰ Time: {gridState.weather.time_of_day.toFixed(2)}:00</p>
-        <p className="text-xs text-gray-500 mt-2">👆 Click turbines to control</p>
+        <p className="text-xs text-gray-500 mt-2">👆 Click elements to control</p>
       </div>
       
-      {/* Wind Control Modal */}
+      {/* Control Modals */}
       <WindModal
         isOpen={showWindModal}
         onClose={() => setShowWindModal(false)}
         currentWindSpeed={gridState.weather.wind_speed}
         onWindChange={handleWindChange}
+      />
+
+      <SolarModal
+        isOpen={showSolarModal}
+        onClose={() => setShowSolarModal(false)}
+        currentCloudCover={gridState.weather.cloud_cover}
+        currentTemperature={gridState.weather.temperature}
+        onCloudChange={handleCloudChange}
+        onTemperatureChange={handleTemperatureChange}
+      />
+
+      <DemandModal
+        isOpen={showDemandModal}
+        onClose={() => setShowDemandModal(false)}
+        industrialEnabled={gridState.demand.industrial_load > 0}
+        onIndustrialToggle={handleIndustrialToggle}
       />
       
       {/* CSS for turbine blade rotation */}
