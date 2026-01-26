@@ -10,7 +10,8 @@
  * - Sky (changes with time of day)
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { WindModal } from '../Modals/WindModal';
 
 interface GridState {
   weather: { 
@@ -34,6 +35,8 @@ interface SceneProps {
 }
 
 export const Scene: React.FC<SceneProps> = ({ gridState }) => {
+  const [showWindModal, setShowWindModal] = useState(false);
+
   // Calculate animation speeds and intensities
   const windSpeed = gridState.weather.wind_speed;
   const isNight = gridState.weather.time_of_day < 6 || gridState.weather.time_of_day >= 18;
@@ -57,6 +60,14 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
     if (hour < 8) return '#ff6b6b'; // Dawn
     if (hour < 18) return '#4ecdc4'; // Day
     return '#ff6b6b'; // Dusk
+  };
+
+  const handleWindChange = (speed: number) => {
+    fetch('http://localhost:8000/api/control/wind', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wind_speed: speed })
+    });
   };
 
   return (
@@ -110,9 +121,13 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           fill="#2d5016"
         />
         
-        {/* Wind Turbines */}
+        {/* Wind Turbines - CLICKABLE */}
         {[200, 350, 500].map((x, i) => (
-          <g key={i}>
+          <g 
+            key={i} 
+            onClick={() => setShowWindModal(true)}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
             {/* Tower */}
             <line 
               x1={x} 
@@ -276,8 +291,16 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
       <div className="absolute bottom-4 left-4 bg-gray-800 bg-opacity-90 p-4 rounded-lg border border-gray-700">
         <p className="text-sm text-gray-300">💨 Wind: {windSpeed.toFixed(1)} m/s</p>
         <p className="text-sm text-gray-300">⏰ Time: {gridState.weather.time_of_day.toFixed(2)}:00</p>
-        <p className="text-xs text-gray-500 mt-2">Click elements to control (coming soon)</p>
+        <p className="text-xs text-gray-500 mt-2">👆 Click turbines to control</p>
       </div>
+      
+      {/* Wind Control Modal */}
+      <WindModal
+        isOpen={showWindModal}
+        onClose={() => setShowWindModal(false)}
+        currentWindSpeed={gridState.weather.wind_speed}
+        onWindChange={handleWindChange}
+      />
       
       {/* Add CSS for turbine animation */}
       <style>{`
