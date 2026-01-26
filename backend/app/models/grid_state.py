@@ -227,7 +227,6 @@ class Metrics(BaseModel):
     renewable_energy_percent: float = Field(
         default=0.0,
         ge=0.0,
-        le=100.0,
         description="Percentage of demand met by renewable sources"
     )
     co2_emissions_kg: float = Field(

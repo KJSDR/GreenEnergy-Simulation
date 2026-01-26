@@ -7,6 +7,7 @@ REST endpoints for controlling and querying the simulation.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+from app.api import websocket
 
 from app.simulation.simulation_engine import SimulationEngine
 from app.models.grid_state import GridState
@@ -20,11 +21,10 @@ sim_engine: Optional[SimulationEngine] = None
 
 
 def get_simulation() -> SimulationEngine:
-    """Get or create simulation instance"""
-    global sim_engine
-    if sim_engine is None:
-        sim_engine = SimulationEngine()
-    return sim_engine
+    """Get the shared simulation instance"""
+    if websocket.sim_engine is None:
+        websocket.sim_engine = SimulationEngine()
+    return websocket.sim_engine
 
 
 # Request/Response models
