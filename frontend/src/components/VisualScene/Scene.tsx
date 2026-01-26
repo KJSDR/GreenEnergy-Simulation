@@ -121,7 +121,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           fill="#2d5016"
         />
         
-        {/* Wind Turbines - CLICKABLE */}
+        {/* Wind Turbines - PROPERLY ROTATING */}
         {[200, 350, 500].map((x, i) => (
           <g 
             key={i} 
@@ -137,18 +137,23 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
               stroke="#e0e0e0" 
               strokeWidth="8"
             />
-            {/* Blades */}
-            <g 
-              transform={`translate(${x}, 400)`}
-              style={{
-                animation: turbineSpeed > 0 ? `spin ${10 / turbineSpeed}s linear infinite` : 'none'
-              }}
-            >
-              <line x1="0" y1="0" x2="0" y2="-80" stroke="#f0f0f0" strokeWidth="8" />
-              <line x1="0" y1="0" x2="-70" y2="40" stroke="#f0f0f0" strokeWidth="8" />
-              <line x1="0" y1="0" x2="70" y2="40" stroke="#f0f0f0" strokeWidth="8" />
-              <circle cx="0" cy="0" r="15" fill="#333" />
+            
+            {/* Blades - nested transform for proper rotation */}
+            <g transform={`translate(${x}, 400)`}>
+              <g 
+                className={turbineSpeed > 0 ? 'turbine-spin' : ''}
+                style={{
+                  transformOrigin: 'center',
+                  transformBox: 'fill-box'
+                }}
+              >
+                <line x1="0" y1="0" x2="0" y2="-80" stroke="#f0f0f0" strokeWidth="8" />
+                <line x1="0" y1="0" x2="-70" y2="40" stroke="#f0f0f0" strokeWidth="8" />
+                <line x1="0" y1="0" x2="70" y2="40" stroke="#f0f0f0" strokeWidth="8" />
+                <circle cx="0" cy="0" r="15" fill="#333" />
+              </g>
             </g>
+            
             {/* Status indicator */}
             <circle 
               cx={x} 
@@ -302,9 +307,13 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
         onWindChange={handleWindChange}
       />
       
-      {/* Add CSS for turbine animation */}
+      {/* CSS for turbine blade rotation */}
       <style>{`
-        @keyframes spin {
+        .turbine-spin {
+          animation: turbine-rotate ${turbineSpeed > 0 ? 10 / turbineSpeed : 10}s linear infinite;
+        }
+        
+        @keyframes turbine-rotate {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
