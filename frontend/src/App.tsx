@@ -3,6 +3,7 @@ import { useWebSocket } from './hooks/useWebSocket';
 import { Layout } from './components/Layout';
 import { Scene } from './components/VisualScene/Scene';
 import { ChartsPanel } from './components/Dashboard/ChartsPanel';
+import { ScenarioControls } from './components/Controls/ScenarioControls';
 
 function App() {
   const { gridState, isConnected } = useWebSocket();
@@ -41,6 +42,10 @@ function App() {
         leftPanel={<Scene gridState={gridState} />}
         rightPanel={
           <div className="p-8">
+            {/* Scenario controls*/}
+            <div className="mb-6">
+              <ScenarioControls />
+            </div>
             {/* Status Cards */}
             <div className="grid grid-cols-2 gap-6 mb-6">
               
