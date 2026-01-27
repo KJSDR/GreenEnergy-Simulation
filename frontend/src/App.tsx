@@ -4,6 +4,7 @@ import { Layout } from './components/Layout';
 import { Scene } from './components/VisualScene/Scene';
 import { ChartsPanel } from './components/Dashboard/ChartsPanel';
 import { ScenarioControls } from './components/Controls/ScenarioControls';
+import { SpeedControls } from './components/Controls/SpeedControls';
 
 function App() {
   const { gridState, isConnected } = useWebSocket();
@@ -45,6 +46,10 @@ function App() {
             {/* Scenario controls*/}
             <div className="mb-6">
               <ScenarioControls />
+            </div>
+            {/* Speed Constrols*/}
+            <div className="mb-6">
+              <SpeedControls />
             </div>
             {/* Status Cards */}
             <div className="grid grid-cols-2 gap-6 mb-6">
