@@ -5,6 +5,7 @@ import { Scene } from './components/VisualScene/Scene';
 import { ChartsPanel } from './components/Dashboard/ChartsPanel';
 import { ScenarioControls } from './components/Controls/ScenarioControls';
 import { SpeedControls } from './components/Controls/SpeedControls';
+import { StatsSummary } from './components/Dashboard/StatsSummary';
 
 function App() {
   const { gridState, isConnected } = useWebSocket();
@@ -50,6 +51,10 @@ function App() {
             {/* Speed Constrols*/}
             <div className="mb-6">
               <SpeedControls />
+            </div>
+            {/* Stats Summary*/}
+            <div className="mb-6">
+              <StatsSummary gridState={gridState} />
             </div>
             {/* Status Cards */}
             <div className="grid grid-cols-2 gap-6 mb-6">
