@@ -18,15 +18,31 @@ export const SpeedControls: React.FC = () => {
     { label: '8x', value: 8 },
   ];
 
-  const handleSpeedChange = (speed: number) => {
+  const handleSpeedChange = async (speed: number) => {
     setCurrentSpeed(speed);
-    // Note: This will be implemented in backend later
-    console.log('Speed changed to:', speed);
+    try {
+      await fetch('http://localhost:8000/api/control/speed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speed })
+      });
+    } catch (error) {
+      console.error('Failed to set speed:', error);
+    }
   };
 
-  const togglePause = () => {
-    setIsPaused(!isPaused);
-    console.log('Pause toggled:', !isPaused);
+  const togglePause = async () => {
+    const newPausedState = !isPaused;
+    setIsPaused(newPausedState);
+    try {
+      await fetch('http://localhost:8000/api/control/pause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paused: newPausedState })
+      });
+    } catch (error) {
+      console.error('Failed to toggle pause:', error);
+    }
   };
 
   return (
