@@ -40,6 +40,8 @@ class ConnectionManager:
 # Global connection manager and simulation
 manager = ConnectionManager()
 sim_engine: SimulationEngine = None
+is_paused: bool = False
+speed_multiplier: float = 1.0
 
 
 async def websocket_endpoint(websocket: WebSocket):
@@ -64,9 +66,15 @@ async def websocket_endpoint(websocket: WebSocket):
             "data": json.loads(state.model_dump_json())
         })
         
-        # Simulation loop - send updates every 2 seconds
+        # Simulation loop - send updates based on speed
         while True:
-            await asyncio.sleep(2.0)  # 2 second interval for demo
+            # Calculate delay based on speed (2 seconds / speed)
+            delay = 2.0 / speed_multiplier if speed_multiplier > 0 else 2.0
+            await asyncio.sleep(delay)
+            
+            # Skip tick if paused
+            if is_paused:
+                continue
             
             # Advance simulation and get new state
             state = sim_engine.tick()
