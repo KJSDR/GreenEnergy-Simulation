@@ -7,7 +7,6 @@ REST endpoints for controlling and querying the simulation.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.api import websocket
 
 from app.simulation.simulation_engine import SimulationEngine
 from app.models.grid_state import GridState
@@ -21,10 +20,11 @@ sim_engine: Optional[SimulationEngine] = None
 
 
 def get_simulation() -> SimulationEngine:
-    """Get the shared simulation instance"""
-    if websocket.sim_engine is None:
-        websocket.sim_engine = SimulationEngine()
-    return websocket.sim_engine
+    """Get or create simulation instance"""
+    global sim_engine
+    if sim_engine is None:
+        sim_engine = SimulationEngine()
+    return sim_engine
 
 
 # Request/Response models
@@ -149,4 +149,35 @@ async def get_simulation_info():
         "tick_duration_minutes": sim.time.tick_duration_minutes,
         "current_day": sim.time.current_day,
         "current_hour": sim.time.current_hour
+    }
+
+
+# Simulation control endpoints
+class SimulationControlRequest(BaseModel):
+    paused: bool
+
+class SpeedControlRequest(BaseModel):
+    speed: float
+
+
+@router.post("/control/pause")
+async def control_pause(request: SimulationControlRequest):
+    """Pause/unpause simulation"""
+    from app.api import websocket
+    websocket.is_paused = request.paused
+    return {
+        "status": "ok",
+        "paused": request.paused
+    }
+
+
+@router.post("/control/speed")
+async def control_speed(request: SpeedControlRequest):
+    """Set simulation speed multiplier"""
+    from app.api import websocket
+    # Speed: 0.5x, 1x, 2x, 4x, 8x
+    websocket.speed_multiplier = request.speed
+    return {
+        "status": "ok",
+        "speed": request.speed
     }
