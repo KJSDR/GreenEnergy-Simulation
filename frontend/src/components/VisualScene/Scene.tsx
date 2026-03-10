@@ -41,6 +41,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   const [showDemandModal, setShowDemandModal] = useState(false);
 
   const windSpeed = gridState.weather.wind_speed;
+  const windSpeedRounded = Math.round(windSpeed); // Round to reduce animation changes
   const isNight = gridState.weather.time_of_day < 6 || gridState.weather.time_of_day >= 18;
   const solarIntensity = gridState.solar.current_output_mw / gridState.solar.capacity_mw;
   const batteryLevel = (gridState.battery.current_charge_mwh / gridState.battery.max_capacity_mwh) * 100;
@@ -167,7 +168,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           <img 
             src="/assets/images/blade.png" 
             alt="wind turbine blades"
-            className="absolute w-auto object-contain"
+            className={`absolute w-auto object-contain ${windSpeed > 3 && windSpeed < 25 ? 'animate-turbine-spin' : ''}`}
             style={{ 
               height: '180px',
               top: '-82px',
@@ -175,7 +176,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
               transform: 'translateX(-50%)',
               zIndex: 1,
               opacity: windSpeed > 3 && windSpeed < 25 ? 1 : 0.5,
-              animation: windSpeed > 3 && windSpeed < 25 ? `spin ${10 / (windSpeed / 5)}s linear infinite` : 'none'
+              animationDuration: windSpeedRounded > 3 && windSpeedRounded < 25 ? `${10 / (windSpeedRounded / 5)}s` : undefined
             }}
           />
           {/* Static Tower - IN FRONT of blades */}
@@ -308,6 +309,10 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
         
         .animate-drift-slow {
           animation: drift-slow 90s linear infinite;
+        }
+        
+        .animate-turbine-spin {
+          animation: spin linear infinite;
         }
       `}</style>
     </div>
