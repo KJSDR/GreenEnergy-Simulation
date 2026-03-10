@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
+import { WS_URL } from '../config';
 
 interface GridState {
   timestamp: string;
@@ -69,7 +70,7 @@ export const useWebSocket = () => {
 
   useEffect(() => {
     // Connect to WebSocket
-    const ws = new WebSocket('ws://127.0.0.1:8000/ws');
+    const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
     ws.onopen = () => {

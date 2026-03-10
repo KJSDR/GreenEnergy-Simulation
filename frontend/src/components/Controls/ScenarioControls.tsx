@@ -5,12 +5,13 @@
  */
 
 import React from 'react';
+import { API_BASE_URL } from '../../config';
 
 export const ScenarioControls: React.FC = () => {
   
   const triggerScenario = async (scenario: string) => {
     try {
-      await fetch(`http://localhost:8000/api/scenario/${scenario}`, {
+      await fetch(`${API_BASE_URL}/api/scenario/${scenario}`, {
         method: 'POST'
       });
     } catch (error) {
@@ -20,7 +21,7 @@ export const ScenarioControls: React.FC = () => {
 
   const resetSimulation = async () => {
     try {
-      await fetch('http://localhost:8000/api/reset', {
+      await fetch(`${API_BASE_URL}/api/reset`, {
         method: 'POST'
       });
     } catch (error) {

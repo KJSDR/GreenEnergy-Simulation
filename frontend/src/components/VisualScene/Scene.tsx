@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { WindModal } from '../Modals/WindModal';
 import { SolarModal } from '../Modals/SolarModal';
 import { DemandModal } from '../Modals/DemandModal';
+import { API_BASE_URL } from '../../config';
 
 interface GridState {
   weather: { 
@@ -69,7 +70,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
 
   // API calls
   const handleWindChange = (speed: number) => {
-    fetch('http://localhost:8000/api/control/wind', {
+    fetch(`${API_BASE_URL}/api/control/wind`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ wind_speed: speed })
@@ -77,7 +78,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   };
 
   const handleCloudChange = (cover: number) => {
-    fetch('http://localhost:8000/api/control/clouds', {
+    fetch(`${API_BASE_URL}/api/control/clouds`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cloud_cover: cover })
@@ -85,7 +86,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   };
 
   const handleTemperatureChange = (temp: number) => {
-    fetch('http://localhost:8000/api/control/temperature', {
+    fetch(`${API_BASE_URL}/api/control/temperature`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ temperature: temp })
@@ -93,7 +94,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   };
 
   const handleIndustrialToggle = (enabled: boolean) => {
-    fetch('http://localhost:8000/api/control/industrial', {
+    fetch(`${API_BASE_URL}/api/control/industrial`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enabled })

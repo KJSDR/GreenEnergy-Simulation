@@ -5,6 +5,7 @@
  */
 
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../../config';
 
 export const SpeedControls: React.FC = () => {
   const [currentSpeed, setCurrentSpeed] = useState(1);
@@ -21,7 +22,7 @@ export const SpeedControls: React.FC = () => {
   const handleSpeedChange = async (speed: number) => {
     setCurrentSpeed(speed);
     try {
-      await fetch('http://localhost:8000/api/control/speed', {
+      await fetch(`${API_BASE_URL}/api/control/speed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ speed })
@@ -35,7 +36,7 @@ export const SpeedControls: React.FC = () => {
     const newPausedState = !isPaused;
     setIsPaused(newPausedState);
     try {
-      await fetch('http://localhost:8000/api/control/pause', {
+      await fetch(`${API_BASE_URL}/api/control/pause`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paused: newPausedState })
