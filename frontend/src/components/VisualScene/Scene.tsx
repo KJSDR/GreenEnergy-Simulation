@@ -134,22 +134,35 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
       <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-b from-green-900 to-green-950" />
 
       {/* Elements positioned on screen */}
-      <div className="absolute inset-0 flex items-end justify-around pb-12 px-8">
+      <div className="absolute inset-0 flex items-end justify-around pb-28 px-8">
         
-        {/* Wind Turbine - Left */}
+        {/* Wind Turbine - Left (tower + spinning blades) */}
         <div 
           className="cursor-pointer hover:scale-105 transition-transform relative"
           onClick={() => setShowWindModal(true)}
-          style={{ height: '280px' }}
+          style={{ height: '280px', width: '200px' }}
         >
+          {/* Spinning Blades - BEHIND tower */}
           <img 
-            src="/assets/images/wind-turbine.gif" 
-            alt="wind turbine"
-            className="h-full w-auto object-contain"
+            src="/assets/images/blade.png" 
+            alt="wind turbine blades"
+            className="absolute w-auto object-contain"
             style={{ 
+              height: '180px',
+              top: '-82px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1,
               opacity: windSpeed > 3 && windSpeed < 25 ? 1 : 0.5,
-              filter: windSpeed > 3 && windSpeed < 25 ? 'none' : 'grayscale(0.5)'
+              animation: windSpeed > 3 && windSpeed < 25 ? `spin ${10 / (windSpeed / 5)}s linear infinite` : 'none'
             }}
+          />
+          {/* Static Tower - IN FRONT of blades */}
+          <img 
+            src="/assets/images/tower.png" 
+            alt="wind turbine tower"
+            className="h-full w-auto object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+            style={{ zIndex: 2 }}
           />
           <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 bg-opacity-90 px-3 py-1 rounded text-xs">
             💨 {windSpeed.toFixed(1)} m/s
@@ -261,6 +274,11 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
         @keyframes drift-slow {
           0% { transform: translateX(0); }
           100% { transform: translateX(100vw); }
+        }
+        
+        @keyframes spin {
+          from { transform: translateX(-50%) rotate(0deg); }
+          to { transform: translateX(-50%) rotate(360deg); }
         }
         
         .animate-drift {
