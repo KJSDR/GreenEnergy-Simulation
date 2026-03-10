@@ -93,6 +93,27 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
       {/* Sky Background */}
       <div className={`absolute inset-0 bg-gradient-to-b ${getSkyGradient()} transition-all duration-1000`} />
       
+      {/* Sun/Moon - Top Right */}
+      <div className="absolute top-12 right-12">
+        {isNight ? (
+          <img 
+            src="/assets/images/moon.png" 
+            alt="moon"
+            className="w-24 h-24 object-contain transition-opacity duration-1000"
+            style={{ opacity: 0.9 }}
+          />
+        ) : (
+          <img 
+            src="/assets/images/sun.png" 
+            alt="sun"
+            className="w-24 h-24 object-contain transition-opacity duration-1000"
+            style={{ 
+              filter: 'drop-shadow(0 0 30px rgba(255, 215, 0, 0.6))'
+            }}
+          />
+        )}
+      </div>
+      
       {/* Clouds - Drifting */}
       <div className="absolute top-10 left-0 w-full h-32 pointer-events-none">
         <img 
