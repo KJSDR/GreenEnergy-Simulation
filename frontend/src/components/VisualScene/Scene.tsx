@@ -1,10 +1,7 @@
 /**
- * Visual Scene
+ * Visual Scene - Using Image Assets
  * 
- * Animated SVG scene with clickable controls for:
- * - Wind turbines
- * - Solar panels/weather
- * - City/demand
+ * Clean visual scene with actual images instead of basic SVG
  */
 
 import React, { useState } from 'react';
@@ -43,29 +40,19 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   const [showSolarModal, setShowSolarModal] = useState(false);
   const [showDemandModal, setShowDemandModal] = useState(false);
 
-  // Calculate animation speeds and intensities
   const windSpeed = gridState.weather.wind_speed;
   const isNight = gridState.weather.time_of_day < 6 || gridState.weather.time_of_day >= 18;
-  
-  // Turbine rotation speed
-  const turbineSpeed = windSpeed < 3 ? 0 : windSpeed > 25 ? 0 : windSpeed / 5;
-  
-  // Solar glow intensity
   const solarIntensity = gridState.solar.current_output_mw / gridState.solar.capacity_mw;
-  
-  // Battery charge level
   const batteryLevel = (gridState.battery.current_charge_mwh / gridState.battery.max_capacity_mwh) * 100;
-  
-  // Gas plant active
   const gasActive = gridState.gas.current_output_mw > 0;
-  
-  // Sky color based on time
-  const getSkyColor = () => {
+
+  // Sky gradient based on time
+  const getSkyGradient = () => {
     const hour = gridState.weather.time_of_day;
-    if (hour < 6 || hour >= 20) return '#1a1a2e';
-    if (hour < 8) return '#ff6b6b';
-    if (hour < 18) return '#4ecdc4';
-    return '#ff6b6b';
+    if (hour < 6 || hour >= 20) return 'from-slate-900 to-slate-800'; // Night
+    if (hour < 8) return 'from-orange-400 to-blue-400'; // Dawn
+    if (hour < 18) return 'from-blue-400 to-blue-300'; // Day
+    return 'from-orange-400 to-purple-500'; // Dusk
   };
 
   // API calls
@@ -102,248 +89,145 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
   };
 
   return (
-    <div className="h-full bg-gray-900 relative overflow-hidden">
-      <svg 
-        width="100%" 
-        height="100%" 
-        viewBox="0 0 1000 800"
-        className="w-full h-full"
-      >
-        {/* Sky */}
-        <rect 
-          width="1000" 
-          height="600" 
-          fill={getSkyColor()}
-          className="transition-all duration-1000"
+    <div className="h-full relative overflow-hidden">
+      {/* Sky Background */}
+      <div className={`absolute inset-0 bg-gradient-to-b ${getSkyGradient()} transition-all duration-1000`} />
+      
+      {/* Clouds - Drifting */}
+      <div className="absolute top-10 left-0 w-full h-32 pointer-events-none">
+        <img 
+          src="/assets/images/cloud.png" 
+          alt="cloud"
+          className="absolute animate-drift"
+          style={{ 
+            width: '120px',
+            opacity: gridState.weather.cloud_cover,
+            top: '20px',
+            left: '10%'
+          }}
         />
-        
-        {/* Sun/Moon */}
-        <circle 
-          cx={isNight ? 900 : 100} 
-          cy={100}
-          r={40}
-          fill={isNight ? '#f0f0f0' : '#ffd700'}
-          className="transition-all duration-1000"
+        <img 
+          src="/assets/images/cloud.png" 
+          alt="cloud"
+          className="absolute animate-drift-slow"
+          style={{ 
+            width: '140px',
+            opacity: gridState.weather.cloud_cover,
+            top: '50px',
+            left: '40%'
+          }}
         />
+        <img 
+          src="/assets/images/cloud.png" 
+          alt="cloud"
+          className="absolute animate-drift"
+          style={{ 
+            width: '100px',
+            opacity: gridState.weather.cloud_cover,
+            top: '30px',
+            left: '70%'
+          }}
+        />
+      </div>
+
+      {/* Ground Layer */}
+      <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-b from-green-900 to-green-950" />
+
+      {/* Elements positioned on screen */}
+      <div className="absolute inset-0 flex items-end justify-around pb-12 px-8">
         
-        {/* Clouds - CLICKABLE */}
-        <g 
-          onClick={() => setShowSolarModal(true)}
-          className="cursor-pointer hover:opacity-80 transition-opacity"
+        {/* Wind Turbine - Left */}
+        <div 
+          className="cursor-pointer hover:scale-105 transition-transform relative"
+          onClick={() => setShowWindModal(true)}
+          style={{ height: '280px' }}
         >
-          <ellipse 
-            cx={200 + (gridState.weather.time_of_day * 10)} 
-            cy={150} 
-            rx={80} 
-            ry={30}
-            fill="rgba(255,255,255,0.3)"
-            opacity={gridState.weather.cloud_cover}
-          />
-          <ellipse 
-            cx={600 + (gridState.weather.time_of_day * 5)} 
-            cy={120} 
-            rx={100} 
-            ry={35}
-            fill="rgba(255,255,255,0.3)"
-            opacity={gridState.weather.cloud_cover}
-          />
-        </g>
-        
-        {/* Ground */}
-        <rect 
-          y="600" 
-          width="1000" 
-          height="200" 
-          fill="#2d5016"
-        />
-        
-        {/* Wind Turbines - CLICKABLE */}
-        {[200, 350, 500].map((x, i) => (
-          <g 
-            key={i} 
-            onClick={() => setShowWindModal(true)}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            {/* Tower */}
-            <line 
-              x1={x} 
-              y1={400} 
-              x2={x} 
-              y2={600} 
-              stroke="#e0e0e0" 
-              strokeWidth="8"
-            />
-            
-            {/* Blades */}
-            <g transform={`translate(${x}, 400)`}>
-              <g 
-                className={turbineSpeed > 0 ? 'turbine-spin' : ''}
-                style={{
-                  transformOrigin: 'center',
-                  transformBox: 'fill-box'
-                }}
-              >
-                <line x1="0" y1="0" x2="0" y2="-80" stroke="#f0f0f0" strokeWidth="8" />
-                <line x1="0" y1="0" x2="-70" y2="40" stroke="#f0f0f0" strokeWidth="8" />
-                <line x1="0" y1="0" x2="70" y2="40" stroke="#f0f0f0" strokeWidth="8" />
-                <circle cx="0" cy="0" r="15" fill="#333" />
-              </g>
-            </g>
-            
-            {/* Status indicator */}
-            <circle 
-              cx={x} 
-              cy={620} 
-              r="8" 
-              fill={turbineSpeed > 0 ? "#10b981" : "#ef4444"}
-            />
-          </g>
-        ))}
-        
-        {/* Solar Array - CLICKABLE */}
-        <g 
-          transform="translate(650, 500)"
-          onClick={() => setShowSolarModal(true)}
-          className="cursor-pointer hover:opacity-80 transition-opacity"
-        >
-          <rect 
-            width="150" 
-            height="80" 
-            fill="#1e40af"
-            opacity={0.8 + (solarIntensity * 0.2)}
-          />
-          <rect 
-            width="150" 
-            height="80" 
-            fill="rgba(255, 215, 0, 0.3)"
-            style={{
-              filter: `drop-shadow(0 0 ${solarIntensity * 20}px rgba(255, 215, 0, ${solarIntensity}))`
+          <img 
+            src="/assets/images/wind-turbine.gif" 
+            alt="wind turbine"
+            className="h-full w-auto object-contain"
+            style={{ 
+              opacity: windSpeed > 3 && windSpeed < 25 ? 1 : 0.5,
+              filter: windSpeed > 3 && windSpeed < 25 ? 'none' : 'grayscale(0.5)'
             }}
           />
-          {/* Grid lines */}
-          <line x1="50" y1="0" x2="50" y2="80" stroke="#0f172a" strokeWidth="2" />
-          <line x1="100" y1="0" x2="100" y2="80" stroke="#0f172a" strokeWidth="2" />
-          <line x1="0" y1="40" x2="150" y2="40" stroke="#0f172a" strokeWidth="2" />
-        </g>
-        
-        {/* City - CLICKABLE */}
-        <g 
-          transform="translate(50, 480)"
-          onClick={() => setShowDemandModal(true)}
-          className="cursor-pointer hover:opacity-80 transition-opacity"
+          <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-800 bg-opacity-90 px-3 py-1 rounded text-xs">
+            💨 {windSpeed.toFixed(1)} m/s
+          </div>
+        </div>
+
+        {/* Solar Panels - Center-Left */}
+        <div 
+          className="cursor-pointer hover:scale-105 transition-transform relative"
+          onClick={() => setShowSolarModal(true)}
+          style={{ height: '120px' }}
         >
-          {[0, 40, 80].map((x, i) => (
-            <rect 
-              key={i}
-              x={x} 
-              y={0}
-              width="30" 
-              height={80 + (i * 20)}
-              fill="#1e293b"
-              stroke="#334155"
-              strokeWidth="1"
-            />
-          ))}
-          {/* Windows (lights) */}
-          {[0, 40, 80].map((x, i) => (
-            <g key={`windows-${i}`}>
-              {[10, 30, 50].map((y, j) => (
-                <rect 
-                  key={j}
-                  x={x + 8} 
-                  y={y + (i * 20)}
-                  width="6" 
-                  height="8"
-                  fill={isNight ? "#fbbf24" : "rgba(251, 191, 36, 0.3)"}
-                  opacity={0.5 + (gridState.demand.total_demand / 1000)}
-                />
-              ))}
-            </g>
-          ))}
-        </g>
-        
-        {/* Battery */}
-        <g transform="translate(850, 520)">
-          <rect 
-            width="80" 
-            height="60" 
-            fill="none"
-            stroke="#10b981" 
-            strokeWidth="3"
-            rx="5"
+          <img 
+            src="/assets/images/solar-panels.png" 
+            alt="solar panels"
+            className="h-full w-auto object-contain"
+            style={{ 
+              filter: `brightness(${0.7 + solarIntensity * 0.5}) drop-shadow(0 0 ${solarIntensity * 20}px rgba(250, 204, 21, ${solarIntensity}))`
+            }}
           />
-          <rect 
-            x="5" 
-            y={60 - (batteryLevel * 0.5)}
-            width="70" 
-            height={batteryLevel * 0.5}
-            fill={batteryLevel > 20 ? "#10b981" : "#ef4444"}
-            opacity="0.7"
+        </div>
+
+        {/* Village - Center */}
+        <div 
+          className="cursor-pointer hover:scale-105 transition-transform relative"
+          onClick={() => setShowDemandModal(true)}
+          style={{ height: '150px' }}
+        >
+          <img 
+            src="/assets/images/village.gif" 
+            alt="village"
+            className="h-full w-auto object-contain"
           />
-          <rect 
-            x="30" 
-            y="-8" 
-            width="20" 
-            height="8"
-            fill="#10b981"
-            rx="2"
+        </div>
+
+        {/* Factory - Right */}
+        <div 
+          className="relative"
+          style={{ height: '180px' }}
+        >
+          <img 
+            src="/assets/images/factory.png" 
+            alt="factory"
+            className="h-full w-auto object-contain"
+            style={{ 
+              filter: gasActive ? 'brightness(1.2)' : 'brightness(0.7) grayscale(0.5)'
+            }}
           />
-          <text 
-            x="40" 
-            y="40" 
-            textAnchor="middle" 
-            fill="white" 
-            fontSize="14"
-            fontWeight="bold"
-          >
-            {batteryLevel.toFixed(0)}%
-          </text>
-        </g>
-        
-        {/* Gas Plant */}
-        <g transform="translate(750, 520)">
-          <rect 
-            width="60" 
-            height="80" 
-            fill="#4b5563"
-            stroke="#1f2937"
-            strokeWidth="2"
-          />
-          {/* Smoke stack */}
-          <rect 
-            x="20" 
-            y="-40" 
-            width="20" 
-            height="40"
-            fill="#6b7280"
-          />
-          {/* Smoke (when active) */}
           {gasActive && (
-            <>
-              <circle cx="30" cy="-50" r="10" fill="rgba(156, 163, 175, 0.5)" />
-              <circle cx="25" cy="-65" r="12" fill="rgba(156, 163, 175, 0.4)" />
-              <circle cx="35" cy="-75" r="10" fill="rgba(156, 163, 175, 0.3)" />
-            </>
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 text-4xl animate-pulse">
+              💨
+            </div>
           )}
-          {/* Status indicator */}
-          <circle 
-            cx="30" 
-            cy="40" 
-            r="8" 
-            fill={gasActive ? "#ef4444" : "#6b7280"}
-          />
-        </g>
-        
-      </svg>
-      
-      {/* Info Overlay */}
-      <div className="absolute bottom-4 left-4 bg-gray-800 bg-opacity-90 p-4 rounded-lg border border-gray-700">
-        <p className="text-sm text-gray-300">💨 Wind: {windSpeed.toFixed(1)} m/s</p>
-        <p className="text-sm text-gray-300">⏰ Time: {gridState.weather.time_of_day.toFixed(2)}:00</p>
-        <p className="text-xs text-gray-500 mt-2">👆 Click elements to control</p>
+        </div>
+
       </div>
-      
-      {/* Control Modals */}
+
+      {/* Battery Indicator - Bottom Right */}
+      <div className="absolute bottom-8 right-8 bg-gray-800 bg-opacity-90 rounded-lg p-4 border border-gray-700">
+        <p className="text-xs text-gray-400 mb-1">Battery</p>
+        <div className="w-24 h-8 bg-gray-700 rounded relative overflow-hidden">
+          <div 
+            className={`h-full transition-all ${batteryLevel > 20 ? 'bg-green-400' : 'bg-red-400'}`}
+            style={{ width: `${batteryLevel}%` }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+            {batteryLevel.toFixed(0)}%
+          </div>
+        </div>
+      </div>
+
+      {/* Info Overlay - Bottom Left */}
+      <div className="absolute bottom-8 left-8 bg-gray-800 bg-opacity-90 p-4 rounded-lg border border-gray-700">
+        <p className="text-sm text-gray-300">⏰ {gridState.weather.time_of_day.toFixed(2)}:00</p>
+        <p className="text-xs text-gray-500 mt-1">Click elements to control</p>
+      </div>
+
+      {/* Modals */}
       <WindModal
         isOpen={showWindModal}
         onClose={() => setShowWindModal(false)}
@@ -366,16 +250,25 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
         industrialEnabled={gridState.demand.industrial_load > 0}
         onIndustrialToggle={handleIndustrialToggle}
       />
-      
-      {/* CSS for turbine blade rotation */}
+
+      {/* CSS Animations */}
       <style>{`
-        .turbine-spin {
-          animation: turbine-rotate ${turbineSpeed > 0 ? 10 / turbineSpeed : 10}s linear infinite;
+        @keyframes drift {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(100vw); }
         }
         
-        @keyframes turbine-rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes drift-slow {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(100vw); }
+        }
+        
+        .animate-drift {
+          animation: drift 60s linear infinite;
+        }
+        
+        .animate-drift-slow {
+          animation: drift-slow 90s linear infinite;
         }
       `}</style>
     </div>
