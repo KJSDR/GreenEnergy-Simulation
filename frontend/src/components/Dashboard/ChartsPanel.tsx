@@ -82,11 +82,11 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gridState }) => {
   }, [gridState]);
 
   return (
-    <div className="space-y-3">
-      {/* Generation vs Demand */}
-      <div>
+    <div className="h-full flex flex-col gap-3">
+      {/* Generation vs Demand - takes half the space */}
+      <div className="flex-1 min-h-0">
         <p className="text-xs text-gray-400 mb-1">Supply vs Demand</p>
-        <ResponsiveContainer width="100%" height={120}>
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
@@ -128,10 +128,10 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gridState }) => {
         </ResponsiveContainer>
       </div>
 
-      {/* Energy Sources Breakdown */}
-      <div>
+      {/* Energy Sources Breakdown - takes other half */}
+      <div className="flex-1 min-h-0">
         <p className="text-xs text-gray-400 mb-1">Energy Sources</p>
-        <ResponsiveContainer width="100%" height={120}>
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
