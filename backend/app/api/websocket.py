@@ -52,19 +52,30 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     global sim_engine
     
+    print("🔌 WebSocket connection attempt...")
+    
     # Initialize simulation if needed
     if sim_engine is None:
+        print("⚙️  Initializing simulation engine...")
         sim_engine = SimulationEngine()
+        print("✅ Simulation engine initialized!")
     
+    print("🤝 Accepting WebSocket connection...")
     await manager.connect(websocket)
+    print("✅ WebSocket accepted!")
     
     try:
         # Send initial state immediately
+        print("📊 Getting initial state...")
         state = sim_engine.tick()
+        print("✅ State obtained, serializing...")
+        json_data = json.loads(state.model_dump_json())
+        print("✅ Serialized, sending to client...")
         await websocket.send_json({
             "type": "state_update",
-            "data": json.loads(state.model_dump_json())
+            "data": json_data
         })
+        print("✅ Initial state sent!")
         
         # Simulation loop - send updates based on speed
         while True:
@@ -87,9 +98,12 @@ async def websocket_endpoint(websocket: WebSocket):
             await manager.broadcast(message)
             
     except WebSocketDisconnect:
+        print("❌ WebSocket disconnected")
         manager.disconnect(websocket)
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        print(f"💥 WebSocket error: {e}")
+        import traceback
+        traceback.print_exc()
         manager.disconnect(websocket)
 
 
