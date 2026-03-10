@@ -3,9 +3,6 @@ import { useWebSocket } from './hooks/useWebSocket';
 import { Layout } from './components/Layout';
 import { Scene } from './components/VisualScene/Scene';
 import { ChartsPanel } from './components/Dashboard/ChartsPanel';
-import { ScenarioControls } from './components/Controls/ScenarioControls';
-import { SpeedControls } from './components/Controls/SpeedControls';
-import { StatsSummary } from './components/Dashboard/StatsSummary';
 
 function App() {
   const { gridState, isConnected } = useWebSocket();
@@ -37,14 +34,17 @@ function App() {
           <div>
             <h1 className="text-2xl font-bold">⚡ Renewable Grid Simulator</h1>
             <p className="text-gray-400 text-sm">
-              Day {gridState.simulation_day || 1} • {gridState.weather?.time_of_day?.toFixed(2) || '0.00'}:00
+              Real-time renewable energy management
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-400">Real-time Simulation</p>
-            <p className={`text-sm font-medium ${gridState.is_grid_stable ? 'text-green-400' : 'text-red-400'}`}>
-              {gridState.is_grid_stable ? '● ONLINE' : '● UNSTABLE'}
-            </p>
+            <div className={`text-3xl font-bold ${
+              gridState.metrics?.renewable_energy_percent > 80 ? 'text-green-400' :
+              gridState.metrics?.renewable_energy_percent > 50 ? 'text-yellow-400' : 'text-red-400'
+            }`}>
+              {gridState.metrics?.renewable_energy_percent?.toFixed(1) || '0.0'}%
+            </div>
+            <p className="text-sm text-gray-400">Renewable Energy</p>
           </div>
         </div>
       </header>
@@ -55,109 +55,108 @@ function App() {
         rightPanel={
           <div className="p-6 space-y-6">
             
-            {/* Controls Section */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-gray-300">Controls</h2>
-              <SpeedControls />
-              <ScenarioControls />
-            </div>
-
-            {/* Stats Summary */}
-            <StatsSummary gridState={gridState} />
-
-            {/* Status Cards - Compact */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Key Metrics */}
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4">📊 Grid Status</h2>
               
-              {/* Grid Status */}
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h3 className="text-sm font-semibold mb-3 text-gray-400">⚡ GRID STATUS</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Demand</span>
-                    <span className="font-mono font-medium">{gridState.demand?.total_demand?.toFixed(0) || '0'} MW</span>
+              <div className="grid grid-cols-2 gap-6">
+                {/* Supply & Demand */}
+                <div>
+                  <p className="text-sm text-gray-400 mb-2">Power Flow</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Demand</span>
+                      <span className="font-mono font-medium">{gridState.demand?.total_demand?.toFixed(0) || '0'} MW</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">Supply</span>
+                      <span className="font-mono font-medium">{gridState.total_generation_mw?.toFixed(0) || '0'} MW</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-gray-700">
+                      <span className="text-gray-300">Balance</span>
+                      <span className={`font-mono font-bold ${gridState.is_grid_stable ? 'text-green-400' : 'text-red-400'}`}>
+                        {gridState.supply_demand_balance >= 0 ? '+' : ''}{gridState.supply_demand_balance?.toFixed(0) || '0'} MW
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Supply</span>
-                    <span className="font-mono font-medium">{gridState.total_generation_mw?.toFixed(0) || '0'} MW</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Balance</span>
-                    <span className={`font-mono font-medium ${gridState.is_grid_stable ? 'text-green-400' : 'text-red-400'}`}>
-                      {gridState.supply_demand_balance >= 0 ? '+' : ''}{gridState.supply_demand_balance?.toFixed(0) || '0'} MW
-                    </span>
+                </div>
+
+                {/* Energy Mix */}
+                <div>
+                  <p className="text-sm text-gray-400 mb-2">Energy Sources</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">💨 Wind</span>
+                      <span className="font-mono text-blue-400 font-medium">{gridState.wind?.current_output_mw?.toFixed(0) || '0'} MW</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">☀️ Solar</span>
+                      <span className="font-mono text-yellow-400 font-medium">{gridState.solar?.current_output_mw?.toFixed(0) || '0'} MW</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">🔋 Battery</span>
+                      <span className="font-mono text-green-400 font-medium">
+                        {gridState.battery?.current_output_mw?.toFixed(0) || '0'} MW
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-300">🏭 Gas</span>
+                      <span className="font-mono text-red-400 font-medium">{gridState.gas?.current_output_mw?.toFixed(0) || '0'} MW</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Energy Sources */}
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h3 className="text-sm font-semibold mb-3 text-gray-400">🌍 ENERGY SOURCES</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">💨 Wind</span>
-                    <span className="font-mono text-blue-400 font-medium">{gridState.wind?.current_output_mw?.toFixed(0) || '0'} MW</span>
+              {/* CO2 Impact */}
+              <div className="mt-6 pt-6 border-t border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-400">CO₂ Emissions (Total)</p>
+                    <p className="text-2xl font-bold">{((gridState.metrics?.co2_emissions_kg || 0) / 1000).toFixed(1)} tons</p>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">☀️ Solar</span>
-                    <span className="font-mono text-yellow-400 font-medium">{gridState.solar?.current_output_mw?.toFixed(0) || '0'} MW</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">🔋 Battery</span>
-                    <span className="font-mono text-green-400 font-medium">
-                      {gridState.battery?.current_output_mw?.toFixed(0) || '0'} MW ({((gridState.battery?.current_charge_mwh / gridState.battery?.max_capacity_mwh * 100) || 0).toFixed(0)}%)
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">🏭 Gas</span>
-                    <span className="font-mono text-red-400 font-medium">{gridState.gas?.current_output_mw?.toFixed(0) || '0'} MW</span>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Grid Status</p>
+                    <p className={`text-lg font-bold ${gridState.is_grid_stable ? 'text-green-400' : 'text-red-400'}`}>
+                      {gridState.is_grid_stable ? '✅ STABLE' : '⚠️ UNSTABLE'}
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {/* Weather */}
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h3 className="text-sm font-semibold mb-3 text-gray-400">🌤️ WEATHER</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Wind Speed</span>
-                    <span className="font-mono font-medium">{gridState.weather?.wind_speed?.toFixed(1) || '0.0'} m/s</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Cloud Cover</span>
-                    <span className="font-mono font-medium">{((gridState.weather?.cloud_cover || 0) * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Temperature</span>
-                    <span className="font-mono font-medium">{gridState.weather?.temperature?.toFixed(1) || '0.0'}°C</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Metrics */}
-              <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                <h3 className="text-sm font-semibold mb-3 text-gray-400">📊 SESSION METRICS</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Renewable %</span>
-                    <span className="font-mono text-green-400 font-medium">{gridState.metrics?.renewable_energy_percent?.toFixed(1) || '0.0'}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">CO₂ Total</span>
-                    <span className="font-mono font-medium">{((gridState.metrics?.co2_emissions_kg || 0) / 1000).toFixed(1)} tons</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Cost Total</span>
-                    <span className="font-mono font-medium">€{(gridState.metrics?.operational_cost_eur / 1000 || 0).toFixed(0)}k</span>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
-            {/* Charts Section */}
+            {/* Current Conditions */}
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <h2 className="text-xl font-semibold mb-4">🌤️ Current Conditions</h2>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-400">Wind Speed</p>
+                  <p className="text-xl font-bold">{gridState.weather?.wind_speed?.toFixed(1) || '0.0'} m/s</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Cloud Cover</p>
+                  <p className="text-xl font-bold">{((gridState.weather?.cloud_cover || 0) * 100).toFixed(0)}%</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Time</p>
+                  <p className="text-xl font-bold">{gridState.weather?.time_of_day?.toFixed(2) || '0.00'}:00</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-300 mb-4">Analytics</h2>
+              <h2 className="text-xl font-semibold text-gray-300 mb-4">📈 Performance</h2>
               <ChartsPanel gridState={gridState} />
+            </div>
+
+            {/* Instructions */}
+            <div className="bg-gray-700 rounded-lg p-4 text-sm text-gray-300">
+              <p className="font-medium mb-2">💡 Interactive Controls:</p>
+              <ul className="space-y-1 text-gray-400">
+                <li>• Click wind turbines to adjust wind speed</li>
+                <li>• Click solar panels to change weather conditions</li>
+                <li>• Click city buildings to toggle industrial demand</li>
+              </ul>
             </div>
 
           </div>

@@ -234,34 +234,7 @@ class Metrics(BaseModel):
         ge=0.0,
         description="Total CO2 emissions in kilograms (this period)"
     )
-    operational_cost_eur: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="Operational costs in EUR"
-    )
-    revenue_eur: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="Revenue from excess energy sales in EUR"
-    )
-    grid_uptime_percent: float = Field(
-        default=100.0,
-        ge=0.0,
-        le=100.0,
-        description="Percentage of time demand was met"
-    )
-    gas_activation_count: int = Field(
-        default=0,
-        ge=0,
-        description="Number of times gas backup was activated"
-    )
-    battery_cycles: float = Field(
-        default=0.0,
-        ge=0.0,
-        description="Number of full battery charge/discharge cycles"
-    )
-
-
+    
 class GridState(BaseModel):
     """Complete state of the grid at a point in time"""
     timestamp: datetime = Field(

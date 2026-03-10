@@ -152,10 +152,6 @@ class SimulationEngine:
             metrics=Metrics(
                 renewable_energy_percent=self._calculate_renewable_percent(),
                 co2_emissions_kg=self.cumulative_metrics["total_co2_kg"],
-                operational_cost_eur=self.cumulative_metrics["total_cost_eur"],
-                grid_uptime_percent=self._calculate_uptime_percent(),
-                gas_activation_count=self.gas.activation_count,
-                battery_cycles=self.battery.total_cycles
             )
         )
         
