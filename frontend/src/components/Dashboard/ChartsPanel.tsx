@@ -1,9 +1,7 @@
 /**
- * Charts Panel
+ * Charts Panel - COMPACT with both charts
  * 
- * Real-time charts showing:
- * - Generation vs Demand over time
- * - Battery charge level
+ * Generation vs Demand + Energy Sources breakdown
  */
 
 import React, { useEffect, useState } from 'react';
@@ -20,12 +18,15 @@ import {
 
 interface GridState {
   weather: { time_of_day: number };
-  demand: { total_demand: number };
+  demand: { 
+    base_load: number;
+    industrial_load: number;
+    heating_cooling_load: number;
+  };
   wind: { current_output_mw: number };
   solar: { current_output_mw: number };
-  battery: { current_output_mw: number; current_charge_mwh: number };
+  battery: { current_output_mw: number };
   gas: { current_output_mw: number };
-  total_generation_mw: number;
 }
 
 interface ChartsPanelProps {
@@ -44,71 +45,82 @@ interface DataPoint {
 
 export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gridState }) => {
   const [data, setData] = useState<DataPoint[]>([]);
-  const maxDataPoints = 50; // Show last 50 data points
+  const maxDataPoints = 30;
 
   useEffect(() => {
     if (!gridState) return;
 
-    // Add new data point
+    // Calculate total demand from components
+    const totalDemand = (gridState.demand?.base_load || 0) + 
+                        (gridState.demand?.industrial_load || 0) + 
+                        (gridState.demand?.heating_cooling_load || 0);
+    
+    // Calculate total generation
+    const totalGeneration = (gridState.wind?.current_output_mw || 0) +
+                           (gridState.solar?.current_output_mw || 0) +
+                           (gridState.battery?.current_output_mw || 0) +
+                           (gridState.gas?.current_output_mw || 0);
+
     const newPoint: DataPoint = {
-      time: gridState.weather.time_of_day.toFixed(2),
-      demand: gridState.demand.total_demand,
+      time: gridState.weather.time_of_day.toFixed(1),
+      demand: totalDemand,
       wind: gridState.wind.current_output_mw,
       solar: gridState.solar.current_output_mw,
-      battery: Math.max(0, gridState.battery.current_output_mw), // Only show discharge
+      battery: Math.max(0, gridState.battery.current_output_mw),
       gas: gridState.gas.current_output_mw,
-      total: gridState.total_generation_mw,
+      total: totalGeneration,
     };
 
     setData((prev) => {
       const updated = [...prev, newPoint];
-      // Keep only last N points
       if (updated.length > maxDataPoints) {
         return updated.slice(updated.length - maxDataPoints);
       }
+      console.log('Total data points:', updated.length); // DEBUG
       return updated;
     });
   }, [gridState]);
 
   return (
-    <div className="space-y-6">
-      {/* Generation vs Demand Chart */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold mb-4">📈 Generation vs Demand</h2>
-        <ResponsiveContainer width="100%" height={300}>
+    <div className="space-y-3">
+      {/* Generation vs Demand */}
+      <div>
+        <p className="text-xs text-gray-400 mb-1">Supply vs Demand</p>
+        <ResponsiveContainer width="100%" height={120}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="time" 
               stroke="#9CA3AF"
-              label={{ value: 'Time (hour)', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
+              tick={{ fontSize: 9 }}
             />
             <YAxis 
               stroke="#9CA3AF"
-              label={{ value: 'Power (MW)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+              tick={{ fontSize: 9 }}
             />
             <Tooltip 
               contentStyle={{ 
                 backgroundColor: '#1F2937', 
                 border: '1px solid #374151',
                 borderRadius: '8px',
-                color: '#F9FAFB'
+                fontSize: '10px'
               }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Line 
               type="monotone" 
               dataKey="demand" 
               stroke="#EF4444" 
-              strokeWidth={2}
+              strokeWidth={3}
               dot={false}
               name="Demand"
+              strokeDasharray="5 5"
             />
             <Line 
               type="monotone" 
               dataKey="total" 
               stroke="#10B981" 
-              strokeWidth={2}
+              strokeWidth={3}
               dot={false}
               name="Total Supply"
             />
@@ -117,29 +129,29 @@ export const ChartsPanel: React.FC<ChartsPanelProps> = ({ gridState }) => {
       </div>
 
       {/* Energy Sources Breakdown */}
-      <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold mb-4">⚡ Energy Sources</h2>
-        <ResponsiveContainer width="100%" height={300}>
+      <div>
+        <p className="text-xs text-gray-400 mb-1">Energy Sources</p>
+        <ResponsiveContainer width="100%" height={120}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis 
               dataKey="time" 
               stroke="#9CA3AF"
-              label={{ value: 'Time (hour)', position: 'insideBottom', offset: -5, fill: '#9CA3AF' }}
+              tick={{ fontSize: 9 }}
             />
             <YAxis 
               stroke="#9CA3AF"
-              label={{ value: 'Power (MW)', angle: -90, position: 'insideLeft', fill: '#9CA3AF' }}
+              tick={{ fontSize: 9 }}
             />
             <Tooltip 
               contentStyle={{ 
                 backgroundColor: '#1F2937', 
                 border: '1px solid #374151',
                 borderRadius: '8px',
-                color: '#F9FAFB'
+                fontSize: '10px'
               }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
             <Line 
               type="monotone" 
               dataKey="wind" 
