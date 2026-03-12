@@ -198,7 +198,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           style={{ height: '120px' }}
         >
           <img 
-            src="/assets/images/solar-panels.png" 
+            src="/assets/images/solar-panels1.png" 
             alt="solar panels"
             className="h-full w-auto object-contain"
             style={{ 
@@ -214,7 +214,7 @@ export const Scene: React.FC<SceneProps> = ({ gridState }) => {
           style={{ height: '150px' }}
         >
           <img 
-            src="/assets/images/village.gif" 
+            src="/assets/images/city.png" 
             alt="village"
             className="h-full w-auto object-contain"
           />
