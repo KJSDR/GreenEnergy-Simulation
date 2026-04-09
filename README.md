@@ -597,4 +597,42 @@ npm start
 
 ---
 
-**Let's build something incredible.** 🚀
+## Dev notes
+
+### Bug fixes — April 2026
+
+---
+
+**Bug: Two separate simulation instances (REST vs WebSocket)**
+`routes.py` and `websocket.py` each had their own `sim_engine` global, lazily initialized independently. The WebSocket loop ticked one engine while REST control commands (set wind, set clouds, etc.) modified a completely different engine — so user input had zero effect on what was visible on screen. Fixed by creating `app/shared.py` which holds a single `get_engine()` / `reset_engine()` singleton. Both modules now import from there and always operate on the same instance.
+
+---
+
+**Bug: `@property` fields not included in JSON output**
+Several computed fields on the Pydantic models were defined as plain Python `@property` methods: `DemandState.total_demand`, `BatteryState.charge_level_percent`, `GridState.total_generation_mw`, `GridState.supply_demand_balance`, and `GridState.is_grid_stable`. Pydantic's `model_dump_json()` only serializes declared model fields — properties are invisible to it. The frontend expected all of these in every WebSocket message and would have received `undefined` for all of them. Fixed by adding Pydantic v2's `@computed_field` decorator on top of each `@property`, which opts them into serialization.
+
+---
+
+**Bug: `GET /api/state` advanced the simulation clock**
+The `/api/state` route called `sim.tick()` to "read" the current state. Every HTTP GET moved the simulation forward by 15 simulated minutes. Any tool, health check, or browser tab refresh would silently jump the clock. Fixed by adding a `get_current_state()` method to `SimulationEngine` that returns `_last_state` (stored at the end of each `tick()`) without advancing anything. The GET route now calls `get_current_state()`.
+
+---
+
+**Bug: CO2 and cost metrics double-counted each tick**
+`simulation_engine.py` was accumulating metrics with `+= self.gas.total_co2_tons * 1000` every tick — but `gas.total_co2_tons` is itself already a running cumulative on the gas plant object. The result was an exponentially growing number (adding a bigger and bigger total to itself on each tick). Fixed by replacing the `+=` accumulation in the engine with a direct read: `co2_emissions_kg = self.gas.total_co2_tons * 1000`. The gas plant's own tracking is correct; the engine just needs to mirror it.
+
+---
+
+**Bug: `Metrics` model was missing most of its fields**
+The `Metrics` Pydantic model only had `renewable_energy_percent` and `co2_emissions_kg`. The frontend type definition expected four more fields (`operational_cost_eur`, `grid_uptime_percent`, `gas_activation_count`, `battery_cycles`), and the simulation engine's own 24-hour test script referenced all of them — it would have crashed on the first run. Added the missing fields to the model and wired them up in the engine: cost and CO2 come from the gas plant, uptime from the existing `_calculate_uptime_percent()` (which was already correct but never called), gas activations from `gas.activation_count`, and battery cycles from `battery.total_cycles`.
+
+---
+
+**Bug: WebSocket broadcast modified list while iterating**
+`ConnectionManager.broadcast()` iterated over `self.active_connections` and called `self.active_connections.remove()` inside the same loop when a send failed. Mutating a list during iteration in Python skips items silently or raises a `RuntimeError`. Fixed by iterating over a copy: `for connection in self.active_connections[:]`.
+
+---
+
+**Bug: Each new WebSocket connection ticked the simulation**
+On connect, `websocket_endpoint` called `sim_engine.tick()` to get an initial state to send to the new client. Every browser refresh or reconnect advanced the clock by one tick. With the new `get_current_state()` method available, the initial send now uses that instead.
+

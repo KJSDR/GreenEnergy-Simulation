@@ -56,12 +56,11 @@ class SimulationEngine:
         self.cumulative_metrics = {
             "total_renewable_mwh": 0.0,
             "total_demand_mwh": 0.0,
-            "total_co2_kg": 0.0,
-            "total_cost_eur": 0.0,
-            "gas_activations": 0,
             "uptime_ticks": 0,
             "total_ticks": 0
         }
+
+        self._last_state = None
         
     def tick(self) -> GridState:
         """
@@ -101,13 +100,11 @@ class SimulationEngine:
         tick_hours = self.time.tick_duration_minutes / 60.0
         renewable_energy = (wind_power + solar_power) * tick_hours
         total_energy = total_demand * tick_hours
-        
+
         self.cumulative_metrics["total_renewable_mwh"] += renewable_energy
         self.cumulative_metrics["total_demand_mwh"] += total_energy
-        self.cumulative_metrics["total_co2_kg"] += self.gas.total_co2_tons * 1000
-        self.cumulative_metrics["total_cost_eur"] += self.gas.total_fuel_cost_eur
         self.cumulative_metrics["total_ticks"] += 1
-        
+
         if balance_result["grid_stable"]:
             self.cumulative_metrics["uptime_ticks"] += 1
         
@@ -151,15 +148,27 @@ class SimulationEngine:
             ),
             metrics=Metrics(
                 renewable_energy_percent=self._calculate_renewable_percent(),
-                co2_emissions_kg=self.cumulative_metrics["total_co2_kg"],
+                co2_emissions_kg=self.gas.total_co2_tons * 1000,
+                operational_cost_eur=self.gas.total_fuel_cost_eur,
+                grid_uptime_percent=self._calculate_uptime_percent(),
+                gas_activation_count=self.gas.activation_count,
+                battery_cycles=self.battery.total_cycles,
             )
         )
+
+        self._last_state = state
         
         # Advance time
         self.time.tick()
         
         return state
     
+    def get_current_state(self):
+        """Return the last computed state without advancing the simulation"""
+        if self._last_state is None:
+            return self.tick()
+        return self._last_state
+
     def _calculate_renewable_percent(self) -> float:
         """Calculate overall renewable percentage"""
         if self.cumulative_metrics["total_demand_mwh"] == 0:
@@ -181,6 +190,7 @@ class SimulationEngine:
         self.battery = Battery(max_capacity_mwh=400.0, initial_charge_mwh=200.0)
         self.gas = GasPlant(capacity_mw=300.0)
         self.cumulative_metrics = {k: 0.0 for k in self.cumulative_metrics}
+        self._last_state = None
 
 
 # Test

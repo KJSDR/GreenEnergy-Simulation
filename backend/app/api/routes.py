@@ -8,23 +8,12 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from app.simulation.simulation_engine import SimulationEngine
+from app.shared import get_engine, reset_engine
 from app.models.grid_state import GridState
 
 
 # Create router
 router = APIRouter(prefix="/api", tags=["simulation"])
-
-# Global simulation instance (in production, this would be managed better)
-sim_engine: Optional[SimulationEngine] = None
-
-
-def get_simulation() -> SimulationEngine:
-    """Get or create simulation instance"""
-    global sim_engine
-    if sim_engine is None:
-        sim_engine = SimulationEngine()
-    return sim_engine
 
 
 # Request/Response models
@@ -44,33 +33,27 @@ class ControlIndustrialRequest(BaseModel):
 # Routes
 @router.get("/state", response_model=GridState)
 async def get_current_state():
-    """Get current grid state"""
-    sim = get_simulation()
-    # Run one tick to get latest state
-    state = sim.tick()
-    return state
+    """Get current grid state without advancing the simulation"""
+    return get_engine().get_current_state()
 
 
 @router.post("/tick", response_model=GridState)
 async def advance_tick():
     """Manually advance simulation by one tick"""
-    sim = get_simulation()
-    state = sim.tick()
-    return state
+    return get_engine().tick()
 
 
 @router.post("/reset")
 async def reset_simulation():
     """Reset simulation to initial state"""
-    global sim_engine
-    sim_engine = SimulationEngine()
+    reset_engine()
     return {"status": "reset", "message": "Simulation reset to initial state"}
 
 
 @router.post("/control/wind")
 async def control_wind(request: ControlWindRequest):
     """Manually set wind speed"""
-    sim = get_simulation()
+    sim = get_engine()
     sim.weather.set_wind(request.wind_speed)
     return {
         "status": "ok",
@@ -81,7 +64,7 @@ async def control_wind(request: ControlWindRequest):
 @router.post("/control/clouds")
 async def control_clouds(request: ControlCloudsRequest):
     """Manually set cloud cover"""
-    sim = get_simulation()
+    sim = get_engine()
     sim.weather.set_clouds(request.cloud_cover)
     return {
         "status": "ok",
@@ -92,7 +75,7 @@ async def control_clouds(request: ControlCloudsRequest):
 @router.post("/control/temperature")
 async def control_temperature(request: ControlTemperatureRequest):
     """Manually set temperature"""
-    sim = get_simulation()
+    sim = get_engine()
     sim.weather.set_temperature(request.temperature)
     return {
         "status": "ok",
@@ -103,7 +86,7 @@ async def control_temperature(request: ControlTemperatureRequest):
 @router.post("/control/industrial")
 async def control_industrial(request: ControlIndustrialRequest):
     """Toggle industrial load"""
-    sim = get_simulation()
+    sim = get_engine()
     sim.demand.industrial_enabled = request.enabled
     return {
         "status": "ok",
@@ -114,7 +97,7 @@ async def control_industrial(request: ControlIndustrialRequest):
 @router.post("/scenario/storm")
 async def trigger_storm():
     """Trigger storm weather scenario"""
-    sim = get_simulation()
+    sim = get_engine()
     sim.weather.trigger_storm()
     return {
         "status": "ok",
@@ -127,7 +110,7 @@ async def trigger_storm():
 @router.post("/scenario/calm")
 async def trigger_calm():
     """Trigger calm weather scenario"""
-    sim = get_simulation()
+    sim = get_engine()
     sim.weather.trigger_calm()
     return {
         "status": "ok",
@@ -140,7 +123,7 @@ async def trigger_calm():
 @router.get("/info")
 async def get_simulation_info():
     """Get simulation configuration info"""
-    sim = get_simulation()
+    sim = get_engine()
     return {
         "wind_capacity_mw": sim.wind.total_capacity_mw,
         "solar_capacity_mw": sim.solar.capacity_mw,

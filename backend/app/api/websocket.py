@@ -9,7 +9,7 @@ from typing import List
 import asyncio
 import json
 
-from app.simulation.simulation_engine import SimulationEngine
+from app.shared import get_engine, reset_engine
 
 
 class ConnectionManager:
@@ -29,74 +29,53 @@ class ConnectionManager:
         
     async def broadcast(self, message: dict):
         """Send message to all connected clients"""
-        for connection in self.active_connections:
+        for connection in self.active_connections[:]:  # iterate over copy to allow safe removal
             try:
                 await connection.send_json(message)
             except:
-                # Connection closed, remove it
                 self.active_connections.remove(connection)
 
 
-# Global connection manager and simulation
+# Global connection manager
 manager = ConnectionManager()
-sim_engine: SimulationEngine = None
 is_paused: bool = False
 speed_multiplier: float = 1.0
 
 
 async def websocket_endpoint(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time simulation updates
-    
-    Clients connect and receive state updates every tick (configurable interval)
+    WebSocket endpoint for real-time simulation updates.
+    Uses the shared engine from app.shared so REST control commands
+    affect the same simulation instance.
     """
-    global sim_engine
-    
     print("🔌 WebSocket connection attempt...")
-    
-    # Initialize simulation if needed
-    if sim_engine is None:
-        print("⚙️  Initializing simulation engine...")
-        sim_engine = SimulationEngine()
-        print("✅ Simulation engine initialized!")
-    
-    print("🤝 Accepting WebSocket connection...")
     await manager.connect(websocket)
     print("✅ WebSocket accepted!")
-    
+
     try:
-        # Send initial state immediately
-        print("📊 Getting initial state...")
-        state = sim_engine.tick()
-        print("✅ State obtained, serializing...")
-        json_data = json.loads(state.model_dump_json())
-        print("✅ Serialized, sending to client...")
+        # Send current state immediately without advancing the clock
+        state = get_engine().get_current_state()
         await websocket.send_json({
             "type": "state_update",
-            "data": json_data
+            "data": json.loads(state.model_dump_json())
         })
         print("✅ Initial state sent!")
-        
+
         # Simulation loop - send updates based on speed
         while True:
-            # Calculate delay based on speed (2 seconds / speed)
             delay = 2.0 / speed_multiplier if speed_multiplier > 0 else 2.0
             await asyncio.sleep(delay)
-            
-            # Skip tick if paused
+
             if is_paused:
                 continue
-            
-            # Advance simulation and get new state
-            state = sim_engine.tick()
-            
-            # Broadcast to all connected clients
+
+            state = get_engine().tick()
             message = {
                 "type": "state_update",
                 "data": json.loads(state.model_dump_json())
             }
             await manager.broadcast(message)
-            
+
     except WebSocketDisconnect:
         print("❌ WebSocket disconnected")
         manager.disconnect(websocket)
@@ -111,35 +90,31 @@ async def websocket_endpoint(websocket: WebSocket):
 async def handle_control_command(websocket: WebSocket, command: dict):
     """
     Handle control commands from client
-    
+
     Commands:
     - {"action": "set_wind", "value": 12.5}
     - {"action": "set_clouds", "value": 0.7}
     - {"action": "reset"}
     - etc.
     """
-    global sim_engine
-    
-    if sim_engine is None:
-        return
-    
     action = command.get("action")
     value = command.get("value")
-    
+    engine = get_engine()
+
     if action == "set_wind":
-        sim_engine.weather.set_wind(value)
+        engine.weather.set_wind(value)
     elif action == "set_clouds":
-        sim_engine.weather.set_clouds(value)
+        engine.weather.set_clouds(value)
     elif action == "set_temperature":
-        sim_engine.weather.set_temperature(value)
+        engine.weather.set_temperature(value)
     elif action == "toggle_industrial":
-        sim_engine.demand.industrial_enabled = value
+        engine.demand.industrial_enabled = value
     elif action == "trigger_storm":
-        sim_engine.weather.trigger_storm()
+        engine.weather.trigger_storm()
     elif action == "trigger_calm":
-        sim_engine.weather.trigger_calm()
+        engine.weather.trigger_calm()
     elif action == "reset":
-        sim_engine.reset()
+        reset_engine()
     
     # Send acknowledgment
     await websocket.send_json({

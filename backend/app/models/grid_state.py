@@ -5,7 +5,7 @@ These Pydantic models define the structure of the grid simulation data.
 They serve as the "single source of truth" for what data exists in the system.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -83,6 +83,7 @@ class DemandState(BaseModel):
         description="Temperature-dependent heating/cooling load in MW"
     )
     
+    @computed_field
     @property
     def total_demand(self) -> float:
         """Calculate total power demand"""
@@ -189,6 +190,7 @@ class BatteryState(EnergySource):
         description="Battery round-trip efficiency (0.95 = 95%)"
     )
     
+    @computed_field
     @property
     def charge_level_percent(self) -> float:
         """Battery charge as percentage of capacity"""
@@ -232,7 +234,28 @@ class Metrics(BaseModel):
     co2_emissions_kg: float = Field(
         default=0.0,
         ge=0.0,
-        description="Total CO2 emissions in kilograms (this period)"
+        description="Total CO2 emissions in kilograms"
+    )
+    operational_cost_eur: float = Field(
+        default=0.0,
+        ge=0.0,
+        description="Total fuel cost in EUR"
+    )
+    grid_uptime_percent: float = Field(
+        default=100.0,
+        ge=0.0,
+        le=100.0,
+        description="Percentage of ticks where supply met demand"
+    )
+    gas_activation_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of times gas plant was activated from standby"
+    )
+    battery_cycles: float = Field(
+        default=0.0,
+        ge=0.0,
+        description="Total battery charge/discharge cycles"
     )
     
 class GridState(BaseModel):
@@ -262,6 +285,7 @@ class GridState(BaseModel):
     # Metrics
     metrics: Metrics = Field(default_factory=Metrics)
     
+    @computed_field
     @property
     def total_generation_mw(self) -> float:
         """Total power being generated right now"""
@@ -271,22 +295,24 @@ class GridState(BaseModel):
             self.battery.current_output_mw +  # Can be negative if charging
             self.gas.current_output_mw
         )
-    
+
     @property
     def total_renewable_mw(self) -> float:
         """Total renewable power generation (wind + solar + battery discharge)"""
-        battery_contribution = max(0, self.battery.current_output_mw)  # Only count discharge
+        battery_contribution = max(0, self.battery.current_output_mw)
         return (
             self.wind.current_output_mw +
             self.solar.current_output_mw +
             battery_contribution
         )
-    
+
+    @computed_field
     @property
     def supply_demand_balance(self) -> float:
         """Difference between supply and demand (+ = surplus, - = deficit)"""
         return self.total_generation_mw - self.demand.total_demand
-    
+
+    @computed_field
     @property
     def is_grid_stable(self) -> bool:
         """Is the grid meeting demand?"""
